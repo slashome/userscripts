@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Trello cost counter
 // @namespace    https://trello.com/
-// @updateURL
+// @updateURL    https://raw.githubusercontent.com/slashome/userscripts/master/trello-cost-counter.js
 // @version      0.1
 // @description  Count the cost total per Trello list and displays it in Trello list header
 // @author       https://github.com/slashome
