@@ -2,7 +2,7 @@
 // @name         Trello Cost Counter
 // @namespace    https://trello.com/
 // @updateURL    https://raw.githubusercontent.com/slashome/userscripts/master/trello-cost-counter.js
-// @version      0.1
+// @version      0.2
 // @description  Count the cost total per Trello list and displays it in Trello list header
 // @author       https://github.com/slashome
 // @match        https://trello.com/*
@@ -24,7 +24,7 @@
 					{
 				    	var badgeContent = badges.item(j).innerHTML;
 				    	if (badgeContent.substring(0, 12) == 'Total Cost: ') {
-					    	var cost = Number(badgeContent.substring(12));
+					    	var cost = Number(badgeContent.substring(12).replace(',', '.'));
 					    	totalCost += cost;
 						}
 					}
