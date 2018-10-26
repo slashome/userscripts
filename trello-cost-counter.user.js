@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Trello cost counter
+// @name         Trello Cost Counter
 // @namespace    https://trello.com/
 // @updateURL    https://raw.githubusercontent.com/slashome/userscripts/master/trello-cost-counter.js
 // @version      0.1
@@ -11,13 +11,13 @@
 
 (function() {
     'use strict';
-		var trelloCostCounter = {
+		var tcc = {
 			init: function() {
-				this.removeByClass('trello-cost-counter');
 				var lists = document.getElementsByClassName('js-list');
 				for(var i = 0; i < lists.length; i++)
 				{
 				    var list = lists.item(i);
+                    var existingTotalCost = list.getAttribute('tcc-total');
 				    var totalCost = 0;
 				    var badges = list.getElementsByClassName('badge-text');
 					for(var j = 0; j < badges.length; j++)
@@ -28,8 +28,15 @@
 					    	totalCost += cost;
 						}
 					}
-					var headerName = list.getElementsByClassName('list-header-name')[0];
-					headerName.insertAdjacentHTML('afterEnd', '<div class="trello-cost-counter">Total cost: '+totalCost+'</div>');
+                    if (existingTotalCost != totalCost) {
+                        if (list.getElementsByClassName('trello-cost-counter').length > 0){
+                            var tccItem = list.getElementsByClassName('trello-cost-counter').item(0);
+                            tccItem.remove();
+                        }
+                        list.setAttribute('tcc-total', totalCost);
+                        var headerName = list.getElementsByClassName('list-header-name')[0];
+                        headerName.insertAdjacentHTML('afterEnd', '<div class="trello-cost-counter" style="margin-left:8px;font-size:12px;color:#6b808c;">Total cost<span style="display:inline-block;background-color:white;padding:6px 3px 6px;border-radius:50%;color:#17394d;margin-left:5px;width:25px;height:20px;text-align:-webkit-center;">'+totalCost+'</span></div>');
+                    }
 				}
 			},
 			removeByClass: function(className) {
@@ -39,9 +46,8 @@
 			    }
 			}
 		};
-		trelloCostCounter.init();
 
 		setInterval(function() {
-			trelloCostCounter.init();
+			tcc.init();
 		}, 1000);
 })();
