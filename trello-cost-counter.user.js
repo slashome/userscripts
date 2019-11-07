@@ -6,6 +6,7 @@
 // @description  Count the cost total per Trello list and displays it in Trello list header
 // @author       https://github.com/slashome
 // @match        https://trello.com/*
+// @run-at document-end
 // @grant        none
 // ==/UserScript==
 
