@@ -4,6 +4,7 @@ I personaly use the almighty [qutebrowser](https://qutebrowser.org).
 Use can otherwise:
 - [Greasemonkey](https://addons.mozilla.org/fr/firefox/addon/greasemonkey/) for [Firefox](https://firefox.com)
 - [Tampermonkey](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo) for [Chrome](https://www.google.fr/chrome)
+- [Userscripts](https://github.com/quoid/userscripts/tree/main) for [Safari](https://www.apple.com/safari)
 
 
 ## Trello cost counter for Costello

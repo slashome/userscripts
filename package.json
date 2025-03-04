@@ -1,0 +1,15 @@
+{
+    "name": "slashome-userscripts",
+    "version": "1.0.0",
+    "description": "Package pour le lint des fichiers userscripts de Slashome",
+    "scripts": {
+        "lint": "eslint scripts/*.js",
+        "lint:fix": "eslint scripts/*.js --fix"
+    },
+    "author": "",
+    "license": "MIT",
+    "devDependencies": {
+        "eslint": "^8.0.0",
+        "eslint-plugin-userscripts": "^0.5.6"
+    }
+}
