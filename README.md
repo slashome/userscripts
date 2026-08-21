@@ -27,6 +27,10 @@ Adds a "View all" button to a GitHub pull request review page that ticks every "
 Paginates through JobTeaser's company listing, collects all unique company names, and exports them as a CSV.
 [click to install](https://raw.githubusercontent.com/slashome/userscripts/master/scripts/jobteaser-company-vacum.user.js)
 
+## Lucca planning toggle
+Adds a toggle button on the Lucca absence planning to hide/show collaborators who aren't in the office today (remote work or leave).
+[click to install](https://raw.githubusercontent.com/slashome/userscripts/master/scripts/lucca-planning-toggle.user.js)
+
 ## Parabol user filter
 Adds a user selector on Parabol boards to display only the cards belonging to one chosen user.
 [click to install](https://raw.githubusercontent.com/slashome/userscripts/master/scripts/parabol-user-filter.user.js)
