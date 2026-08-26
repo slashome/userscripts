@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         Instagram Popup Closer
 // @description  Automatically clicks the close (X) button of Instagram's signup/login upsell popup as soon as it shows up.
-// @version      1.0.0
+// @version      1.1.0
 // @namespace    https://github.com/slashome
 // @author       https://github.com/slashome
 // @updateURL    https://raw.githubusercontent.com/slashome/userscripts/main/scripts/instagram-popup-closer.user.js
 // @downloadURL  https://raw.githubusercontent.com/slashome/userscripts/main/scripts/instagram-popup-closer.user.js
+// @match        *://instagram.com/*
 // @match        *://*.instagram.com/*
-// @run-at       document-idle
+// @run-at       document-start
 // @grant        none
 // ==/UserScript==
 
@@ -15,6 +16,12 @@
     'use strict';
 
     const LOG_PREFIX = '[Instagram Popup Closer]';
+
+    // Flip to true (or run `localStorage.ipcDebug = 1`) to trace why a dialog
+    // was left alone.
+    const DEBUG = false;
+
+    const DIALOG_SELECTOR = 'div[role="dialog"][aria-modal="true"]';
 
     // Instagram builds every modal the same way, so closing *any* dialog would
     // also close the ones we actually want (a post, the comments...). The popup
@@ -32,10 +39,20 @@
         'fechar', 'sluiten', 'stäng', 'zamknij', 'kapat',
     ];
 
-    const handled = new WeakSet();
+    // React can mount the dialog before it wires its handlers, so a single
+    // click is not enough — keep trying while the popup is still around.
+    const MAX_ATTEMPTS = 8;
+    const RETRY_DELAY = 400;
+    const SCAN_THROTTLE = 200;
+
+    const attempts = new WeakMap();
 
     function log(...args) {
         console.log(LOG_PREFIX, ...args);
+    }
+
+    function debug(...args) {
+        if (DEBUG || localStorage.getItem('ipcDebug')) log(...args);
     }
 
     function isDisplayed(el) {
@@ -48,7 +65,8 @@
 
     function isCloseIcon(svg) {
         if (svg.querySelector(`polyline[points="${CLOSE_ICON_POLYLINE}"]`)) return true;
-        const label = (svg.getAttribute('aria-label') || svg.querySelector('title')?.textContent || '')
+        const title = svg.querySelector('title');
+        const label = (svg.getAttribute('aria-label') || (title && title.textContent) || '')
             .trim()
             .toLowerCase();
         return CLOSE_LABELS.includes(label);
@@ -57,6 +75,7 @@
     function findCloseButton(dialog) {
         for (const svg of dialog.querySelectorAll('svg')) {
             if (!isCloseIcon(svg)) continue;
+            // `closest` walks out of the SVG subtree into the HTML wrapper.
             const button = svg.closest('[role="button"], button');
             if (button && isDisplayed(button)) return button;
         }
@@ -65,25 +84,91 @@
 
     function isUpsellPopup(dialog) {
         // A real post modal embeds an <article>; the upsell one never does.
-        if (dialog.querySelector('article')) return false;
-        const text = dialog.textContent || '';
-        return CTA_PATTERNS.some(pattern => pattern.test(text));
+        if (dialog.querySelector('article')) {
+            debug('dialog holds an <article>, left alone');
+            return false;
+        }
+        if (CTA_PATTERNS.some(pattern => pattern.test(dialog.textContent || ''))) return true;
+        // Fallback when the CTA wording is a locale we do not list: the upsell
+        // illustration is a sprite served from Instagram's static assets.
+        const illustration = dialog.querySelector('i[data-visualcompletion="css-img"][role="img"]');
+        if (illustration && /rsrc\.php/.test(illustration.style.backgroundImage || '')) return true;
+        debug('dialog matches no upsell signature, left alone');
+        return false;
     }
 
-    function closePopups() {
-        for (const dialog of document.querySelectorAll('div[role="dialog"][aria-modal="true"]')) {
-            if (handled.has(dialog) || !isDisplayed(dialog) || !isUpsellPopup(dialog)) continue;
+    // A bare `el.click()` is ignored whenever the handler sits on mousedown or
+    // pointerdown, which Instagram does use — replay the whole sequence.
+    function fireClick(el) {
+        const rect = el.getBoundingClientRect();
+        const shared = {
+            bubbles: true,
+            cancelable: true,
+            composed: true,
+            view: window,
+            button: 0,
+            clientX: rect.left + rect.width / 2,
+            clientY: rect.top + rect.height / 2,
+        };
 
-            const button = findCloseButton(dialog);
-            if (!button) continue;
+        if (typeof el.focus === 'function') el.focus();
 
-            handled.add(dialog);
-            log('Closing upsell popup');
-            button.click();
+        for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click']) {
+            const isPointer = type.startsWith('pointer');
+            if (isPointer && typeof window.PointerEvent === 'function') {
+                el.dispatchEvent(new PointerEvent(type, {
+                    ...shared, pointerId: 1, pointerType: 'mouse', isPrimary: true,
+                }));
+            } else if (!isPointer) {
+                el.dispatchEvent(new MouseEvent(type, shared));
+            }
         }
     }
 
-    const observer = new MutationObserver(() => { closePopups(); });
+    let retryTimer = null;
+
+    function scheduleRetry() {
+        if (retryTimer) return;
+        retryTimer = setTimeout(() => {
+            retryTimer = null;
+            closePopups();
+        }, RETRY_DELAY);
+    }
+
+    function closePopups() {
+        for (const dialog of document.querySelectorAll(DIALOG_SELECTOR)) {
+            if (!isDisplayed(dialog) || !isUpsellPopup(dialog)) continue;
+
+            const tried = attempts.get(dialog) || 0;
+            if (tried >= MAX_ATTEMPTS) continue;
+
+            const button = findCloseButton(dialog);
+            if (!button) {
+                debug('upsell popup found but no close button yet');
+                scheduleRetry();
+                continue;
+            }
+
+            attempts.set(dialog, tried + 1);
+            log(`Closing upsell popup (attempt ${tried + 1}/${MAX_ATTEMPTS})`);
+            fireClick(button);
+            scheduleRetry();
+        }
+    }
+
+    let scanTimer = null;
+
+    function scheduleScan() {
+        if (scanTimer) return;
+        scanTimer = setTimeout(() => {
+            scanTimer = null;
+            closePopups();
+        }, SCAN_THROTTLE);
+    }
+
+    // Instagram mutates the DOM constantly, hence the throttle.
+    const observer = new MutationObserver(scheduleScan);
     observer.observe(document.documentElement, { childList: true, subtree: true });
+    log('watching for upsell popups');
     closePopups();
 })();
