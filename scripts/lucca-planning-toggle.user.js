@@ -4,8 +4,8 @@
 // @version      1.0.0
 // @namespace    https://ilucca.net
 // @author       https://github.com/slashome
-// @updateURL    https://raw.githubusercontent.com/slashome/userscripts/master/scripts/lucca-planning-toggle.user.js
-// @downloadURL  https://raw.githubusercontent.com/slashome/userscripts/master/scripts/lucca-planning-toggle.user.js
+// @updateURL    https://raw.githubusercontent.com/slashome/userscripts/main/scripts/lucca-planning-toggle.user.js
+// @downloadURL  https://raw.githubusercontent.com/slashome/userscripts/main/scripts/lucca-planning-toggle.user.js
 // @match        *://*.ilucca.net/*
 // @run-at       document-idle
 // @grant        none

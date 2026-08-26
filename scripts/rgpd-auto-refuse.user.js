@@ -4,8 +4,8 @@
 // @version      1.0.0
 // @namespace    https://github.com/slashome
 // @author       https://github.com/slashome
-// @updateURL    https://raw.githubusercontent.com/slashome/userscripts/master/scripts/rgpd-auto-refuse.user.js
-// @downloadURL  https://raw.githubusercontent.com/slashome/userscripts/master/scripts/rgpd-auto-refuse.user.js
+// @updateURL    https://raw.githubusercontent.com/slashome/userscripts/main/scripts/rgpd-auto-refuse.user.js
+// @downloadURL  https://raw.githubusercontent.com/slashome/userscripts/main/scripts/rgpd-auto-refuse.user.js
 // @match        *://*/*
 // @run-at       document-idle
 // @grant        none

@@ -4,8 +4,8 @@
 // @version      1.0.0
 // @namespace    https://www.jobteaser.com
 // @author       https://github.com/slashome
-// @updateURL    https://raw.githubusercontent.com/slashome/userscripts/master/scripts/jobteaser-company-vacum.user.js
-// @downloadURL  https://raw.githubusercontent.com/slashome/userscripts/master/scripts/jobteaser-company-vacum.user.js
+// @updateURL    https://raw.githubusercontent.com/slashome/userscripts/main/scripts/jobteaser-company-vacum.user.js
+// @downloadURL  https://raw.githubusercontent.com/slashome/userscripts/main/scripts/jobteaser-company-vacum.user.js
 // @match        jobteaser.com/fr/companies*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=jobteaser.com
 // @grant        none

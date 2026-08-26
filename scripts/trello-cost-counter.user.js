@@ -4,8 +4,8 @@
 // @version      1.0
 // @namespace    https://trello.com
 // @author       https://github.com/slashome
-// @updateURL    https://raw.githubusercontent.com/slashome/userscripts/master/scripts/trello-cost-counter.user.js
-// @downloadURL  https://raw.githubusercontent.com/slashome/userscripts/master/scripts/trello-cost-counter.user.js
+// @updateURL    https://raw.githubusercontent.com/slashome/userscripts/main/scripts/trello-cost-counter.user.js
+// @downloadURL  https://raw.githubusercontent.com/slashome/userscripts/main/scripts/trello-cost-counter.user.js
 // @author       https://github.com/slashome
 // @match        https://trello.com/*
 // @run-at       document-end

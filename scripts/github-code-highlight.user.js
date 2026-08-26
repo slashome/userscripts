@@ -4,8 +4,8 @@
 // @version      1.0
 // @namespace    https://github.com
 // @author       https://github.com/slashome
-// @updateURL    https://raw.githubusercontent.com/slashome/userscripts/master/scripts/github-code-highlight.user.js
-// @downloadURL  https://raw.githubusercontent.com/slashome/userscripts/master/scripts/github-code-highlight.user.js
+// @updateURL    https://raw.githubusercontent.com/slashome/userscripts/main/scripts/github-code-highlight.user.js
+// @downloadURL  https://raw.githubusercontent.com/slashome/userscripts/main/scripts/github-code-highlight.user.js
 // @match        https://github.com/*
 // @grant        GM_addStyle
 // ==/UserScript==

@@ -4,8 +4,8 @@
 // @version      1.0
 // @namespace    https://choosemycompany.com
 // @author       https://github.com/slashome
-// @updateURL    https://raw.githubusercontent.com/slashome/userscripts/master/scripts/cmc-autofill-login.user.js
-// @downloadURL  https://raw.githubusercontent.com/slashome/userscripts/master/scripts/cmc-autofill-login.user.js
+// @updateURL    https://raw.githubusercontent.com/slashome/userscripts/main/scripts/cmc-autofill-login.user.js
+// @downloadURL  https://raw.githubusercontent.com/slashome/userscripts/main/scripts/cmc-autofill-login.user.js
 // @match        https://preprod.choosemycompany.com/*
 // @match        https://choosemycompany.com/*
 // @match        https://prd.choosemycompany.com/*
