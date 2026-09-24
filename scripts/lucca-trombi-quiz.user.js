@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Lucca - Quiz du trombinoscope
 // @description  Ajoute un bouton à côté de "Organigramme" qui lance un quiz : les photos du trombinoscope Lucca défilent une par une et il faut retrouver le prénom (1 point) et le nom (3 points pour les deux).
-// @version      1.0.0
+// @version      1.1.0
 // @namespace    https://ilucca.net
 // @author       https://github.com/slashome
 // @updateURL    https://raw.githubusercontent.com/slashome/userscripts/main/scripts/lucca-trombi-quiz.user.js
@@ -16,8 +16,14 @@
 
     const HIDDEN_NAMES_STORAGE_KEY = 'lucca-trombi-hidden-names';
     const TILE_SELECTOR = 'li[trombi-user-tile]';
-    const TILE_NAME_SELECTOR = '.employeeTile-infos h4';
-    const TILE_PICTURE_SELECTOR = '.employeeTile-picture img';
+    const USERS_API_URL = '/api/v3/users/scope';
+    const USERS_API_PAGE_SIZE = 100;
+    const USERS_API_PARAMS = {
+        appInstanceId: '5',
+        operations: '1',
+        fields: 'id,name,firstName,lastName,picture[id],collection.count',
+        orderBy: 'lastName,asc,firstName,asc',
+    };
     const HEADER_ACTIONS_SELECTOR = '.pageHeader-content-actions';
     const ORG_CHART_LINK_SELECTOR = `${HEADER_ACTIONS_SELECTOR} a[href="/directory/employee-organization"]`;
     const QUIZ_BUTTON_ID = 'lucca-trombi-quiz-button';
@@ -40,21 +46,6 @@
         }
     }
 
-    function isUpperCaseWord(word) {
-        return word === word.toLocaleUpperCase() && word !== word.toLocaleLowerCase();
-    }
-
-    function splitFullName(fullName) {
-        const words = fullName.split(/\s+/);
-        const lastNameWords = words.filter(isUpperCaseWord);
-        const firstNameWords = words.filter(word => !isUpperCaseWord(word));
-
-        if (!lastNameWords.length || !firstNameWords.length) {
-            return { firstName: words[0], lastName: words.slice(1).join(' ') };
-        }
-        return { firstName: firstNameWords.join(' '), lastName: lastNameWords.join(' ') };
-    }
-
     function normalizeName(name) {
         return name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z]/g, '');
     }
@@ -64,10 +55,8 @@
         return normalizeName(lastName) === normalizeName(person.lastName) ? FULL_NAME_POINTS : FIRST_NAME_POINTS;
     }
 
-    function largePictureUrl(src) {
-        const url = new URL(src, location.href);
-        url.searchParams.set('width', QUIZ_PICTURE_WIDTH);
-        return url.href;
+    function pictureUrl(userId) {
+        return `/directory/api/employees/${userId}/picture?a=0&width=${QUIZ_PICTURE_WIDTH}`;
     }
 
     function shuffle(items) {
@@ -78,21 +67,41 @@
         return items;
     }
 
-    function collectPeople() {
-        const hiddenNames = loadHiddenNames();
-        const people = new Map();
-
-        document.querySelectorAll(TILE_SELECTOR).forEach(tile => {
-            const nameElement = tile.querySelector(TILE_NAME_SELECTOR);
-            const picture = tile.querySelector(TILE_PICTURE_SELECTOR);
-            const fullName = nameElement ? nameElement.textContent.trim() : '';
-
-            if (!fullName || !picture || !picture.src || hiddenNames.has(fullName) || people.has(fullName)) return;
-
-            people.set(fullName, { fullName, ...splitFullName(fullName), pictureUrl: largePictureUrl(picture.src) });
+    async function fetchUsersPage(offset) {
+        const params = new URLSearchParams({ ...USERS_API_PARAMS, paging: `${offset},${USERS_API_PAGE_SIZE}` });
+        const response = await fetch(`${USERS_API_URL}?${params}`, {
+            credentials: 'include',
+            headers: { accept: 'application/json' },
         });
+        if (!response.ok) throw new Error(`Lucca API responded ${response.status}`);
 
-        return shuffle([...people.values()]);
+        const { data } = await response.json();
+        return data;
+    }
+
+    async function fetchAllUsers() {
+        const users = [];
+        for (let offset = 0; ; offset += USERS_API_PAGE_SIZE) {
+            const { items, count } = await fetchUsersPage(offset);
+            users.push(...items);
+            if (items.length < USERS_API_PAGE_SIZE || users.length >= count) return users;
+        }
+    }
+
+    async function collectPeople() {
+        const hiddenNames = loadHiddenNames();
+        const users = await fetchAllUsers();
+
+        const people = users
+            .filter(user => user.picture && !hiddenNames.has(user.name))
+            .map(user => ({
+                fullName: user.name,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                pictureUrl: pictureUrl(user.id),
+            }));
+
+        return shuffle(people);
     }
 
     function injectStyle() {
@@ -207,10 +216,7 @@
         return overlay;
     }
 
-    function startQuiz() {
-        const people = collectPeople();
-        if (!people.length) return;
-
+    async function startQuiz() {
         closeQuiz();
 
         const overlay = createOverlay();
@@ -224,7 +230,8 @@
         const feedback = overlay.querySelector('.lucca-trombi-quiz-feedback');
         const submit = overlay.querySelector('.lucca-trombi-quiz-submit');
 
-        const maxScore = people.length * FULL_NAME_POINTS;
+        let people = [];
+        let maxScore = 0;
         let index = 0;
         let score = 0;
         let answered = false;
@@ -244,6 +251,15 @@
             feedback.textContent = `${outcome.label} — ${person.fullName}`;
         }
 
+        function renderMessage(message, className) {
+            progress.textContent = '';
+            picture.style.display = 'none';
+            inputs.style.display = 'none';
+            submit.style.display = 'none';
+            feedback.className = `lucca-trombi-quiz-feedback ${className}`;
+            feedback.textContent = message;
+        }
+
         function renderQuestion() {
             const person = people[index];
             answered = false;
@@ -251,6 +267,7 @@
             picture.src = person.pictureUrl;
             picture.style.display = '';
             inputs.style.display = '';
+            submit.style.display = '';
             firstNameInput.value = '';
             lastNameInput.value = '';
             firstNameInput.disabled = false;
@@ -288,6 +305,7 @@
 
         form.addEventListener('submit', event => {
             event.preventDefault();
+            if (!people.length) return;
             if (index >= people.length) {
                 startQuiz();
             } else if (!answered) {
@@ -307,6 +325,21 @@
 
         document.body.appendChild(overlay);
         document.body.style.overflow = 'hidden';
+        renderMessage('Chargement des collaborateurs…', '');
+
+        try {
+            people = await collectPeople();
+        } catch {
+            renderMessage('Impossible de charger les collaborateurs depuis Lucca.', 'is-error');
+            return;
+        }
+        if (!overlay.isConnected) return;
+        if (!people.length) {
+            renderMessage('Aucun collaborateur avec photo à deviner.', 'is-error');
+            return;
+        }
+
+        maxScore = people.length * FULL_NAME_POINTS;
         renderQuestion();
     }
 
