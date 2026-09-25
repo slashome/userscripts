@@ -136,8 +136,12 @@
                 inset: 0;
                 z-index: 10000;
                 display: flex;
+                flex-direction: column;
                 align-items: center;
                 justify-content: center;
+                gap: 16px;
+                box-sizing: border-box;
+                padding: 16px;
                 background: #f5f6fa;
                 color: #33415c;
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -170,13 +174,16 @@
                 align-items: center;
                 gap: 16px;
                 box-sizing: border-box;
-                width: min(360px, calc(100vw - 32px));
-                max-height: calc(100vh - 32px);
+                width: min(360px, 100%);
+                min-height: 0;
                 padding: 24px;
                 border-radius: 16px;
                 background: #ffffff;
                 box-shadow: 0 8px 32px rgba(15, 23, 42, 0.12);
             }
+            #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-card.is-end { width: min(1100px, 100%); padding: 32px; }
+            #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-card.is-end .lucca-trombi-quiz-feedback { font-size: 22px; }
+            #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-card.is-end .lucca-trombi-quiz-submit { max-width: 320px; }
             #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-logo { flex-shrink: 0; width: 200px; height: auto; }
             #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-progress { font-size: 13px; color: #6b7a99; }
             #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-picture {
@@ -202,9 +209,10 @@
             #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-feedback.is-partial { color: #b7791f; }
             #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-feedback.is-error { color: #c53030; }
             #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-recap {
-                display: flex;
-                flex-direction: column;
-                gap: 6px;
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
+                gap: 8px 24px;
+                box-sizing: border-box;
                 width: 100%;
                 min-height: 0;
                 margin: 0;
@@ -237,6 +245,12 @@
                 cursor: pointer;
             }
             #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-submit:hover { background: #4a2fa8; }
+            @media (max-width: 640px) {
+                #${QUIZ_OVERLAY_ID} { justify-content: flex-start; padding-top: 72px; }
+                #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-logo { width: 160px; }
+                #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-card.is-end { padding: 20px; }
+                #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-picture { width: 200px; height: 200px; }
+            }
         `;
         document.head.appendChild(style);
     }
@@ -247,8 +261,8 @@
         overlay.innerHTML = `
             <div class="lucca-trombi-quiz-score"></div>
             <button type="button" class="lucca-trombi-quiz-close" aria-label="Fermer le quiz">×</button>
+            ${QUIZ_LOGO}
             <form class="lucca-trombi-quiz-card">
-                ${QUIZ_LOGO}
                 <div class="lucca-trombi-quiz-progress"></div>
                 <img class="lucca-trombi-quiz-picture" alt="">
                 <div class="lucca-trombi-quiz-inputs">
@@ -301,6 +315,7 @@
         }
 
         function renderMessage(message, className) {
+            form.classList.remove('is-end');
             progress.textContent = '';
             picture.style.display = 'none';
             inputs.style.display = 'none';
@@ -313,6 +328,7 @@
         function renderQuestion() {
             const person = people[index];
             answered = false;
+            form.classList.remove('is-end');
             progress.textContent = `${index + 1} / ${people.length}`;
             picture.src = person.pictureUrl;
             picture.style.display = '';
@@ -360,6 +376,7 @@
         }
 
         function renderEnd() {
+            form.classList.add('is-end');
             progress.textContent = 'Terminé !';
             picture.style.display = 'none';
             inputs.style.display = 'none';
