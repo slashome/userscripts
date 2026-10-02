@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Lucca - Quiz du trombinoscope
 // @description  Ajoute un bouton à côté de "Organigramme" qui lance un quiz chronométré : les photos du trombinoscope Lucca défilent une par une et il faut retrouver le prénom (un tiers des points) et le nom (tous les points), points réduits de moitié au plus selon le temps mis à répondre, pour un score final sur 100. Les 10 meilleures parties sont gardées en local.
-// @version      1.4.0
+// @version      1.4.1
 // @namespace    https://ilucca.net
 // @author       https://github.com/slashome
 // @updateURL    https://raw.githubusercontent.com/slashome/userscripts/main/scripts/lucca-trombi-quiz.user.js
@@ -39,6 +39,8 @@
     const TIMER_TICK_MS = 100;
     const TIMER_WARNING_RATIO = 0.33;
     const QUIZ_PICTURE_WIDTH = '400';
+    // Opt-out attributes of 1Password, LastPass, Bitwarden and Dashlane, so no autofill icon covers the inputs.
+    const PASSWORD_MANAGER_IGNORE_ATTRIBUTES = 'data-1p-ignore data-lpignore="true" data-bwignore="true" data-form-type="other"';
 
     const QUIZ_LOGO = `
         <svg class="lucca-trombi-quiz-logo" viewBox="0 -2 200 124" role="img" aria-label="Qui est-ce ?">
@@ -389,8 +391,8 @@
                 <img class="lucca-trombi-quiz-picture" alt="">
                 <div class="lucca-trombi-quiz-feedback"></div>
                 <div class="lucca-trombi-quiz-inputs">
-                    <input name="firstName" placeholder="Prénom" autocomplete="off" spellcheck="false">
-                    <input name="lastName" placeholder="Nom" autocomplete="off" spellcheck="false">
+                    <input name="firstName" placeholder="Prénom" autocomplete="off" spellcheck="false" ${PASSWORD_MANAGER_IGNORE_ATTRIBUTES}>
+                    <input name="lastName" placeholder="Nom" autocomplete="off" spellcheck="false" ${PASSWORD_MANAGER_IGNORE_ATTRIBUTES}>
                 </div>
                 <div class="lucca-trombi-quiz-record"></div>
                 <ol class="lucca-trombi-quiz-best-scores"></ol>
