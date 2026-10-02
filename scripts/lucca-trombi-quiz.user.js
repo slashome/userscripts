@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Lucca - Quiz du trombinoscope
-// @description  Ajoute un bouton à côté de "Organigramme" qui lance un quiz chronométré : les photos du trombinoscope Lucca défilent une par une et il faut retrouver le prénom (10 points) et le nom (30 points pour les deux), points réduits de moitié au plus selon le temps mis à répondre. Les 10 meilleures parties sont gardées en local.
-// @version      1.3.0
+// @description  Ajoute un bouton à côté de "Organigramme" qui lance un quiz chronométré : les photos du trombinoscope Lucca défilent une par une et il faut retrouver le prénom (un tiers des points) et le nom (tous les points), points réduits de moitié au plus selon le temps mis à répondre, pour un score final sur 100. Les 10 meilleures parties sont gardées en local.
+// @version      1.4.0
 // @namespace    https://ilucca.net
 // @author       https://github.com/slashome
 // @updateURL    https://raw.githubusercontent.com/slashome/userscripts/main/scripts/lucca-trombi-quiz.user.js
@@ -33,7 +33,7 @@
     const STYLE_ID = 'lucca-trombi-quiz-style';
     const FIRST_NAME_POINTS = 1;
     const FULL_NAME_POINTS = 3;
-    const POINTS_SCALE = 10;
+    const MAX_SCORE = 100;
     const MIN_TIME_FACTOR = 0.5;
     const QUESTION_DURATION_MS = 15000;
     const TIMER_TICK_MS = 100;
@@ -68,10 +68,24 @@
         }
     }
 
+    function roundScore(value) {
+        return Math.round(value * 10) / 10;
+    }
+
+    function formatScore(value) {
+        return value.toLocaleString('fr-FR', { maximumFractionDigits: 1 });
+    }
+
+    // Games recorded before the score was out of 100 kept their raw score with its own maximum.
+    function toScoreOutOf100({ score, maxScore, durationMs, playedAt }) {
+        if (!maxScore || maxScore === MAX_SCORE) return { score, durationMs, playedAt };
+        return { score: roundScore(score / maxScore * MAX_SCORE), durationMs, playedAt };
+    }
+
     function loadBestScores() {
         try {
             const stored = JSON.parse(localStorage.getItem(BEST_SCORES_STORAGE_KEY));
-            return Array.isArray(stored) ? stored : [];
+            return Array.isArray(stored) ? stored.map(toScoreOutOf100) : [];
         } catch {
             return [];
         }
@@ -99,17 +113,17 @@
         return (ms / 1000).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
-    function pluralize(count, word) {
-        return `${count} ${word}${Math.abs(count) > 1 ? 's' : ''}`;
+    function formatPoints(points) {
+        return `${formatScore(points)} point${points >= 2 ? 's' : ''}`;
     }
 
     function describeScoreGap(entry, previousScores) {
         if (!previousScores.length) return 'Première partie enregistrée !';
 
         const bestScore = previousScores[0];
-        const scoreGap = entry.score - bestScore.score;
-        if (scoreGap > 0) return `Nouveau record ! ${pluralize(scoreGap, 'point')} de plus que ton meilleur score.`;
-        if (scoreGap < 0) return `${pluralize(-scoreGap, 'point')} de moins que ton meilleur score.`;
+        const scoreGap = roundScore(entry.score - bestScore.score);
+        if (scoreGap > 0) return `Nouveau record ! ${formatPoints(scoreGap)} de plus que ton meilleur score.`;
+        if (scoreGap < 0) return `${formatPoints(-scoreGap)} de moins que ton meilleur score.`;
         return 'Égalité avec ton meilleur score.';
     }
 
@@ -138,7 +152,7 @@
 
     function scoreAnswer(basePoints, remainingRatio) {
         const timeFactor = MIN_TIME_FACTOR + (1 - MIN_TIME_FACTOR) * remainingRatio;
-        return Math.round(basePoints * POINTS_SCALE * timeFactor);
+        return Math.round(basePoints / FULL_NAME_POINTS * timeFactor * MAX_SCORE);
     }
 
     function pictureUrl(userId) {
@@ -409,15 +423,19 @@
 
         let people = [];
         const results = [];
-        let maxScore = 0;
         let index = 0;
-        let score = 0;
+        let totalPoints = 0;
         let questionStartedAt = 0;
         let timerInterval = null;
         let durationMs = 0;
 
+        // Each photo is scored out of 100, the game score is their average.
+        function currentScore() {
+            return roundScore(totalPoints / people.length);
+        }
+
         function renderScore() {
-            scoreElement.textContent = `Score : ${score} / ${maxScore}`;
+            scoreElement.textContent = `Score : ${formatScore(currentScore())} / ${MAX_SCORE}`;
         }
 
         function renderFeedback(basePoints, points, person) {
@@ -428,7 +446,7 @@
             };
             const outcome = outcomes[basePoints];
             feedback.className = `lucca-trombi-quiz-feedback ${outcome.className}`;
-            feedback.textContent = `${outcome.label} Précédent : ${person.fullName} (+${points})`;
+            feedback.textContent = `${outcome.label} Précédent : ${person.fullName} (${points} %)`;
         }
 
         function remainingRatio() {
@@ -511,7 +529,7 @@
 
                 const value = document.createElement('span');
                 value.className = 'lucca-trombi-quiz-best-score-value';
-                value.textContent = `${bestScore.score} / ${bestScore.maxScore} — ${formatSeconds(bestScore.durationMs)} s`;
+                value.textContent = `${formatScore(bestScore.score)} / ${MAX_SCORE} — ${formatSeconds(bestScore.durationMs)} s`;
 
                 const date = document.createElement('span');
                 date.className = 'lucca-trombi-quiz-best-score-date';
@@ -543,7 +561,7 @@
 
                 const pointsElement = document.createElement('span');
                 pointsElement.className = 'lucca-trombi-quiz-recap-points';
-                pointsElement.textContent = `+${points}`;
+                pointsElement.textContent = `${points} %`;
 
                 item.append(thumbnail, name, pointsElement);
                 return item;
@@ -557,9 +575,10 @@
             picture.style.display = 'none';
             inputs.style.display = 'none';
             feedback.className = 'lucca-trombi-quiz-feedback is-success';
-            feedback.textContent = `Score final : ${score} / ${maxScore} en ${formatSeconds(durationMs)} s`;
+            const score = currentScore();
+            feedback.textContent = `Score final : ${formatScore(score)} / ${MAX_SCORE} en ${formatSeconds(durationMs)} s`;
 
-            const entry = { score, maxScore, durationMs, playedAt: new Date().toISOString() };
+            const entry = { score, durationMs, playedAt: new Date().toISOString() };
             const previousScores = loadBestScores().sort(compareScores);
             const bestScores = recordScore(entry);
             const scoreGap = document.createElement('strong');
@@ -584,7 +603,7 @@
             const basePoints = matchAnswer(firstNameFound, lastNameFound);
             const points = scoreAnswer(basePoints, remainingRatio());
             results.push({ person, firstNameFound, lastNameFound, points });
-            score += points;
+            totalPoints += points;
             durationMs += Math.min(Date.now() - questionStartedAt, QUESTION_DURATION_MS);
             renderFeedback(basePoints, points, person);
             index++;
@@ -621,7 +640,6 @@
             return;
         }
 
-        maxScore = people.length * FULL_NAME_POINTS * POINTS_SCALE;
         feedback.className = 'lucca-trombi-quiz-feedback';
         feedback.textContent = '';
         renderQuestion();
