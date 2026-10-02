@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Lucca - Quiz du trombinoscope
-// @description  Ajoute un bouton à côté de "Organigramme" qui lance un quiz : les photos du trombinoscope Lucca défilent une par une et il faut retrouver le prénom (1 point) et le nom (3 points pour les deux).
-// @version      1.2.0
+// @description  Ajoute un bouton à côté de "Organigramme" qui lance un quiz chronométré : les photos du trombinoscope Lucca défilent une par une et il faut retrouver le prénom (10 points) et le nom (30 points pour les deux), points réduits de moitié au plus selon le temps mis à répondre. Les 10 meilleures parties sont gardées en local.
+// @version      1.3.0
 // @namespace    https://ilucca.net
 // @author       https://github.com/slashome
 // @updateURL    https://raw.githubusercontent.com/slashome/userscripts/main/scripts/lucca-trombi-quiz.user.js
@@ -15,6 +15,8 @@
     'use strict';
 
     const HIDDEN_NAMES_STORAGE_KEY = 'lucca-trombi-hidden-names';
+    const BEST_SCORES_STORAGE_KEY = 'lucca-trombi-quiz-best-scores';
+    const BEST_SCORES_LIMIT = 10;
     const TILE_SELECTOR = 'li[trombi-user-tile]';
     const USERS_API_URL = '/api/v3/users/scope';
     const USERS_API_PAGE_SIZE = 100;
@@ -31,6 +33,11 @@
     const STYLE_ID = 'lucca-trombi-quiz-style';
     const FIRST_NAME_POINTS = 1;
     const FULL_NAME_POINTS = 3;
+    const POINTS_SCALE = 10;
+    const MIN_TIME_FACTOR = 0.5;
+    const QUESTION_DURATION_MS = 15000;
+    const TIMER_TICK_MS = 100;
+    const TIMER_WARNING_RATIO = 0.33;
     const QUIZ_PICTURE_WIDTH = '400';
 
     const QUIZ_LOGO = `
@@ -61,6 +68,61 @@
         }
     }
 
+    function loadBestScores() {
+        try {
+            const stored = JSON.parse(localStorage.getItem(BEST_SCORES_STORAGE_KEY));
+            return Array.isArray(stored) ? stored : [];
+        } catch {
+            return [];
+        }
+    }
+
+    function compareScores(a, b) {
+        return b.score - a.score || a.durationMs - b.durationMs;
+    }
+
+    function saveBestScores(bestScores) {
+        try {
+            localStorage.setItem(BEST_SCORES_STORAGE_KEY, JSON.stringify(bestScores));
+        } catch {
+            // Storage unavailable (private window, quota): the ranking simply isn't kept.
+        }
+    }
+
+    function recordScore(entry) {
+        const bestScores = [...loadBestScores(), entry].sort(compareScores).slice(0, BEST_SCORES_LIMIT);
+        saveBestScores(bestScores);
+        return bestScores;
+    }
+
+    function formatSeconds(ms) {
+        return (ms / 1000).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function pluralize(count, word) {
+        return `${count} ${word}${Math.abs(count) > 1 ? 's' : ''}`;
+    }
+
+    function describeScoreGap(entry, previousScores) {
+        if (!previousScores.length) return 'Première partie enregistrée !';
+
+        const bestScore = previousScores[0];
+        const scoreGap = entry.score - bestScore.score;
+        if (scoreGap > 0) return `Nouveau record ! ${pluralize(scoreGap, 'point')} de plus que ton meilleur score.`;
+        if (scoreGap < 0) return `${pluralize(-scoreGap, 'point')} de moins que ton meilleur score.`;
+        return 'Égalité avec ton meilleur score.';
+    }
+
+    function describeTimeGap(entry, previousScores) {
+        if (!previousScores.length) return '';
+
+        const bestTime = Math.min(...previousScores.map(previous => previous.durationMs));
+        const timeGap = entry.durationMs - bestTime;
+        if (timeGap === 0) return 'Pile ton meilleur temps.';
+        const comparison = timeGap < 0 ? 'plus rapide' : 'plus lent';
+        return `${formatSeconds(Math.abs(timeGap))} secondes ${comparison} que ton meilleur temps (${formatSeconds(bestTime)} s).`;
+    }
+
     function normalizeName(name) {
         return name.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z]/g, '');
     }
@@ -69,9 +131,14 @@
         return normalizeName(guess) === normalizeName(expected);
     }
 
-    function scoreAnswer(firstNameFound, lastNameFound) {
+    function matchAnswer(firstNameFound, lastNameFound) {
         if (!firstNameFound) return 0;
         return lastNameFound ? FULL_NAME_POINTS : FIRST_NAME_POINTS;
+    }
+
+    function scoreAnswer(basePoints, remainingRatio) {
+        const timeFactor = MIN_TIME_FACTOR + (1 - MIN_TIME_FACTOR) * remainingRatio;
+        return Math.round(basePoints * POINTS_SCALE * timeFactor);
     }
 
     function pictureUrl(userId) {
@@ -185,7 +252,24 @@
             #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-card.is-end .lucca-trombi-quiz-feedback { font-size: 22px; }
             #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-card.is-end .lucca-trombi-quiz-submit { max-width: 320px; }
             #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-logo { flex-shrink: 0; width: 200px; height: auto; }
-            #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-progress { font-size: 13px; color: #6b7a99; }
+            #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-progress { font-size: 13px; color: #6b7a99; text-align: center; }
+            #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-timer {
+                position: relative;
+                width: 100%;
+                height: 8px;
+                border-radius: 999px;
+                background: #e6e8ef;
+                overflow: hidden;
+            }
+            #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-timer-bar {
+                position: absolute;
+                inset: 0 auto 0 0;
+                width: 100%;
+                border-radius: inherit;
+                background: #5b3cc4;
+            }
+            #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-timer.is-warning .lucca-trombi-quiz-timer-bar { background: #c53030; }
+            #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-timer-label { margin-top: -10px; font-size: 13px; font-variant-numeric: tabular-nums; color: #6b7a99; }
             #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-picture {
                 width: 240px;
                 height: 240px;
@@ -204,7 +288,7 @@
                 font-size: 15px;
             }
             #${QUIZ_OVERLAY_ID} input:focus { outline: 2px solid #a48ce8; border-color: #a48ce8; }
-            #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-feedback { min-height: 20px; font-size: 15px; font-weight: 600; text-align: center; }
+            #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-feedback { min-height: 20px; margin-top: -8px; font-size: 14px; font-weight: 600; text-align: center; }
             #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-feedback.is-success { color: #1f8a4c; }
             #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-feedback.is-partial { color: #b7791f; }
             #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-feedback.is-error { color: #c53030; }
@@ -232,6 +316,28 @@
             #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-recap-name { flex: 1; }
             #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-recap-missed { padding: 0 3px; border-radius: 4px; background: #fed7d7; color: #c53030; font-weight: 600; }
             #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-recap-points { font-weight: 700; color: #6b7a99; }
+            #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-record { display: flex; flex-direction: column; gap: 4px; font-size: 14px; text-align: center; }
+            #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-record strong { font-size: 15px; }
+            #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-best-scores {
+                width: min(480px, 100%);
+                margin: 0;
+                padding: 0;
+                list-style: none;
+                counter-reset: rank;
+                font-size: 13px;
+                font-variant-numeric: tabular-nums;
+            }
+            #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-best-scores li {
+                display: flex;
+                gap: 8px;
+                padding: 4px 8px;
+                border-radius: 6px;
+                counter-increment: rank;
+            }
+            #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-best-scores li::before { content: counter(rank) "."; width: 24px; color: #6b7a99; }
+            #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-best-scores li.is-current { background: #efeafc; font-weight: 700; }
+            #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-best-scores .lucca-trombi-quiz-best-score-value { flex: 1; }
+            #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-best-scores .lucca-trombi-quiz-best-score-date { color: #6b7a99; }
             #${QUIZ_OVERLAY_ID} .lucca-trombi-quiz-submit {
                 width: 100%;
                 padding: 10px 14px;
@@ -264,12 +370,16 @@
             ${QUIZ_LOGO}
             <form class="lucca-trombi-quiz-card">
                 <div class="lucca-trombi-quiz-progress"></div>
+                <div class="lucca-trombi-quiz-timer"><div class="lucca-trombi-quiz-timer-bar"></div></div>
+                <div class="lucca-trombi-quiz-timer-label"></div>
                 <img class="lucca-trombi-quiz-picture" alt="">
+                <div class="lucca-trombi-quiz-feedback"></div>
                 <div class="lucca-trombi-quiz-inputs">
                     <input name="firstName" placeholder="Prénom" autocomplete="off" spellcheck="false">
                     <input name="lastName" placeholder="Nom" autocomplete="off" spellcheck="false">
                 </div>
-                <div class="lucca-trombi-quiz-feedback"></div>
+                <div class="lucca-trombi-quiz-record"></div>
+                <ol class="lucca-trombi-quiz-best-scores"></ol>
                 <ul class="lucca-trombi-quiz-recap"></ul>
                 <button type="submit" class="lucca-trombi-quiz-submit"></button>
             </form>
@@ -284,42 +394,87 @@
         const scoreElement = overlay.querySelector('.lucca-trombi-quiz-score');
         const form = overlay.querySelector('form');
         const progress = overlay.querySelector('.lucca-trombi-quiz-progress');
+        const timer = overlay.querySelector('.lucca-trombi-quiz-timer');
+        const timerBar = overlay.querySelector('.lucca-trombi-quiz-timer-bar');
+        const timerLabel = overlay.querySelector('.lucca-trombi-quiz-timer-label');
         const picture = overlay.querySelector('.lucca-trombi-quiz-picture');
         const inputs = overlay.querySelector('.lucca-trombi-quiz-inputs');
         const firstNameInput = form.elements.firstName;
         const lastNameInput = form.elements.lastName;
         const feedback = overlay.querySelector('.lucca-trombi-quiz-feedback');
-        const recap = overlay.querySelector('.lucca-trombi-quiz-recap');
         const submit = overlay.querySelector('.lucca-trombi-quiz-submit');
+        const record = overlay.querySelector('.lucca-trombi-quiz-record');
+        const bestScoresList = overlay.querySelector('.lucca-trombi-quiz-best-scores');
+        const recap = overlay.querySelector('.lucca-trombi-quiz-recap');
 
         let people = [];
         const results = [];
         let maxScore = 0;
         let index = 0;
         let score = 0;
-        let answered = false;
+        let questionStartedAt = 0;
+        let timerInterval = null;
+        let durationMs = 0;
 
         function renderScore() {
             scoreElement.textContent = `Score : ${score} / ${maxScore}`;
         }
 
-        function renderFeedback(points, person) {
+        function renderFeedback(basePoints, points, person) {
             const outcomes = {
-                [FULL_NAME_POINTS]: { className: 'is-success', label: `Bravo ! +${FULL_NAME_POINTS}` },
-                [FIRST_NAME_POINTS]: { className: 'is-partial', label: `Prénom trouvé, +${FIRST_NAME_POINTS}` },
-                0: { className: 'is-error', label: 'Raté' },
+                [FULL_NAME_POINTS]: { className: 'is-success', label: '✓' },
+                [FIRST_NAME_POINTS]: { className: 'is-partial', label: '½' },
+                0: { className: 'is-error', label: '✗' },
             };
-            const outcome = outcomes[points];
+            const outcome = outcomes[basePoints];
             feedback.className = `lucca-trombi-quiz-feedback ${outcome.className}`;
-            feedback.textContent = `${outcome.label} — ${person.fullName}`;
+            feedback.textContent = `${outcome.label} Précédent : ${person.fullName} (+${points})`;
+        }
+
+        function remainingRatio() {
+            const elapsed = Date.now() - questionStartedAt;
+            return Math.max(0, 1 - elapsed / QUESTION_DURATION_MS);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+
+        function renderTimer() {
+            const ratio = remainingRatio();
+            timerBar.style.width = `${ratio * 100}%`;
+            timer.classList.toggle('is-warning', ratio <= TIMER_WARNING_RATIO);
+            timerLabel.textContent = `${Math.ceil(ratio * QUESTION_DURATION_MS / 1000)} s`;
+        }
+
+        function tickTimer() {
+            if (!overlay.isConnected) {
+                stopTimer();
+                return;
+            }
+            renderTimer();
+            if (remainingRatio() === 0) answer();
+        }
+
+        function startTimer() {
+            stopTimer();
+            questionStartedAt = Date.now();
+            renderTimer();
+            timerInterval = setInterval(tickTimer, TIMER_TICK_MS);
+        }
+
+        function setTimerVisible(visible) {
+            timer.style.display = visible ? '' : 'none';
+            timerLabel.style.display = visible ? '' : 'none';
         }
 
         function renderMessage(message, className) {
-            form.classList.remove('is-end');
             progress.textContent = '';
+            setTimerVisible(false);
+            setEndVisible(false);
             picture.style.display = 'none';
             inputs.style.display = 'none';
-            recap.style.display = 'none';
             submit.style.display = 'none';
             feedback.className = `lucca-trombi-quiz-feedback ${className}`;
             feedback.textContent = message;
@@ -327,23 +482,44 @@
 
         function renderQuestion() {
             const person = people[index];
-            answered = false;
-            form.classList.remove('is-end');
             progress.textContent = `${index + 1} / ${people.length}`;
+            setTimerVisible(true);
+            setEndVisible(false);
             picture.src = person.pictureUrl;
             picture.style.display = '';
             inputs.style.display = '';
-            recap.style.display = 'none';
             submit.style.display = '';
             firstNameInput.value = '';
             lastNameInput.value = '';
-            firstNameInput.disabled = false;
-            lastNameInput.disabled = false;
-            feedback.className = 'lucca-trombi-quiz-feedback';
-            feedback.textContent = '';
             submit.textContent = 'Valider';
             renderScore();
             firstNameInput.focus();
+            startTimer();
+        }
+
+        function setEndVisible(visible) {
+            form.classList.toggle('is-end', visible);
+            record.style.display = visible ? '' : 'none';
+            bestScoresList.style.display = visible ? '' : 'none';
+            recap.style.display = visible ? '' : 'none';
+        }
+
+        function renderBestScores(bestScores, entry) {
+            bestScoresList.replaceChildren(...bestScores.map(bestScore => {
+                const item = document.createElement('li');
+                item.classList.toggle('is-current', bestScore === entry);
+
+                const value = document.createElement('span');
+                value.className = 'lucca-trombi-quiz-best-score-value';
+                value.textContent = `${bestScore.score} / ${bestScore.maxScore} — ${formatSeconds(bestScore.durationMs)} s`;
+
+                const date = document.createElement('span');
+                date.className = 'lucca-trombi-quiz-best-score-date';
+                date.textContent = new Date(bestScore.playedAt).toLocaleDateString('fr-FR');
+
+                item.append(value, date);
+                return item;
+            }));
         }
 
         function renderNamePart(name, found) {
@@ -372,50 +548,55 @@
                 item.append(thumbnail, name, pointsElement);
                 return item;
             }));
-            recap.style.display = '';
         }
 
         function renderEnd() {
-            form.classList.add('is-end');
+            stopTimer();
             progress.textContent = 'Terminé !';
+            setTimerVisible(false);
             picture.style.display = 'none';
             inputs.style.display = 'none';
             feedback.className = 'lucca-trombi-quiz-feedback is-success';
-            feedback.textContent = `Score final : ${score} / ${maxScore}`;
+            feedback.textContent = `Score final : ${score} / ${maxScore} en ${formatSeconds(durationMs)} s`;
+
+            const entry = { score, maxScore, durationMs, playedAt: new Date().toISOString() };
+            const previousScores = loadBestScores().sort(compareScores);
+            const bestScores = recordScore(entry);
+            const scoreGap = document.createElement('strong');
+            scoreGap.textContent = describeScoreGap(entry, previousScores);
+            const timeGap = document.createElement('span');
+            timeGap.textContent = describeTimeGap(entry, previousScores);
+            record.replaceChildren(scoreGap, timeGap);
+            renderBestScores(bestScores, entry);
             renderRecap();
+            setEndVisible(true);
+
             submit.textContent = 'Rejouer';
             renderScore();
             submit.focus();
         }
 
         function answer() {
+            stopTimer();
             const person = people[index];
             const firstNameFound = isSameName(firstNameInput.value, person.firstName);
             const lastNameFound = isSameName(lastNameInput.value, person.lastName);
-            const points = scoreAnswer(firstNameFound, lastNameFound);
+            const basePoints = matchAnswer(firstNameFound, lastNameFound);
+            const points = scoreAnswer(basePoints, remainingRatio());
             results.push({ person, firstNameFound, lastNameFound, points });
             score += points;
-            answered = true;
-            firstNameInput.disabled = true;
-            lastNameInput.disabled = true;
-            renderFeedback(points, person);
-            submit.textContent = index + 1 < people.length ? 'Suivant' : 'Voir le score';
-            renderScore();
-            submit.focus();
+            durationMs += Math.min(Date.now() - questionStartedAt, QUESTION_DURATION_MS);
+            renderFeedback(basePoints, points, person);
+            index++;
+            if (index < people.length) renderQuestion();
+            else renderEnd();
         }
 
         form.addEventListener('submit', event => {
             event.preventDefault();
             if (!people.length) return;
-            if (index >= people.length) {
-                startQuiz();
-            } else if (!answered) {
-                answer();
-            } else {
-                index++;
-                if (index < people.length) renderQuestion();
-                else renderEnd();
-            }
+            if (index >= people.length) startQuiz();
+            else answer();
         });
 
         overlay.querySelector('.lucca-trombi-quiz-close').addEventListener('click', closeQuiz);
@@ -440,7 +621,9 @@
             return;
         }
 
-        maxScore = people.length * FULL_NAME_POINTS;
+        maxScore = people.length * FULL_NAME_POINTS * POINTS_SCALE;
+        feedback.className = 'lucca-trombi-quiz-feedback';
+        feedback.textContent = '';
         renderQuestion();
     }
 
