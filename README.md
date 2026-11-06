@@ -13,7 +13,7 @@ I personally use the almighty [qutebrowser](https://qutebrowser.org). You can ot
 
 | Script | Description | |
 | --- | --- | --- |
-| **CMC Auto-fill login** | Auto-fills the ChooseMyCompany login form, picking the right credentials based on the environment (local, preprod, prod). | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/cmc-autofill-login.user.js) |
+| **CMC Auto-fill login** | Auto-fills the ChooseMyCompany login form. On `cmc.local` a selector picks one of the local test accounts; on preprod and prod it fills back the email used at the last login. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/cmc-autofill-login.user.js) |
 | **CMC Auto-fill survey** | Fills a ChooseMyCompany Happy survey with random answers for quick testing. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/cmc-autofill-survey.user.js) |
 | **GitHub Code Background Dark Orange** | Restyles `<code>` and `<tt>` tags inside `.markdown-body` with a dark orange background so inline code is easier to spot on GitHub. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/github-code-highlight.user.js) |
 | **GitHub "View all" button** | Adds a "View all" button to a GitHub pull request review page that ticks every "Viewed" checkbox at once. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/github-view-all-button.user.js) |
