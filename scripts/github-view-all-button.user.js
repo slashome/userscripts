@@ -4,8 +4,8 @@
 // @version      1.0
 // @namespace    https://github.com
 // @author       https://github.com/slashome
-// @updateURL    https://raw.githubusercontent.com/slashome/userscripts/master/scripts/github-view-all-button.user.js
-// @downloadURL  https://raw.githubusercontent.com/slashome/userscripts/master/scripts/github-view-all-button.user.js
+// @updateURL    https://raw.githubusercontent.com/slashome/userscripts/main/scripts/github-view-all-button.user.js
+// @downloadURL  https://raw.githubusercontent.com/slashome/userscripts/main/scripts/github-view-all-button.user.js
 // @match        https://github.com/*/*/pull/*
 // @grant        none
 // ==/UserScript==

@@ -4,8 +4,8 @@
 // @version      1.0.1
 // @namespace    https://parabol.co
 // @author       https://github.com/slashome
-// @updateURL    https://raw.githubusercontent.com/slashome/userscripts/master/scripts/parabol-user-filter.user.js
-// @downloadURL  https://raw.githubusercontent.com/slashome/userscripts/master/scripts/parabol-user-filter.user.js
+// @updateURL    https://raw.githubusercontent.com/slashome/userscripts/main/scripts/parabol-user-filter.user.js
+// @downloadURL  https://raw.githubusercontent.com/slashome/userscripts/main/scripts/parabol-user-filter.user.js
 // @match        parabol.co/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=parabol.co
 // @grant        none
