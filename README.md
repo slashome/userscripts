@@ -8,7 +8,7 @@ Use can otherwise:
 
 
 ## CMC Auto-fill login
-Auto-fills the ChooseMyCompany login form, picking the right credentials based on the environment (local, preprod, prod).
+Auto-fills the ChooseMyCompany login form. On `cmc.local` a selector picks one of the local test accounts; on preprod and prod it fills back the email used at the last login.
 [click to install](https://raw.githubusercontent.com/slashome/userscripts/master/scripts/cmc-autofill-login.user.js)
 
 ## CMC Auto-fill survey
