@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         CMC Auto-fill login
 // @description  Fill automatically the ChooseMyCompany login depending on the environment, with a test account selector on cmc.local
-// @version      2.0
+// @version      2.1
 // @namespace    https://choosemycompany.com
 // @author       https://github.com/slashome
 // @updateURL    https://raw.githubusercontent.com/slashome/userscripts/main/scripts/cmc-autofill-login.user.js
@@ -30,6 +30,8 @@ const LOCAL_ACCOUNTS = [
 const STORAGE_KEY_LOCAL_ACCOUNT = 'cmc-autofill-login:local-account';
 const STORAGE_KEY_REMOTE_EMAIL = 'cmc-autofill-login:remote-email';
 const SELECTOR_ID = 'cmc-autofill-login-selector';
+const HYDRATION_RESYNC_INTERVAL_MS = 250;
+const HYDRATION_RESYNC_DURATION_MS = 10000;
 
 (function () {
     'use strict';
@@ -157,4 +159,7 @@ const SELECTOR_ID = 'cmc-autofill-login-selector';
     const observer = new MutationObserver(sync);
     observer.observe(document.body, { childList: true, subtree: true });
     sync();
+
+    const hydrationResync = setInterval(sync, HYDRATION_RESYNC_INTERVAL_MS);
+    setTimeout(() => clearInterval(hydrationResync), HYDRATION_RESYNC_DURATION_MS);
 })();
