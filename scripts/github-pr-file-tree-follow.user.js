@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GitHub PR file tree follow
 // @description  Scrolls the file tree of a GitHub pull request along with the diff and highlights the file being read, with an on/off toggle next to the filter button
-// @version      1.4
+// @version      1.5
 // @namespace    https://github.com
 // @author       https://github.com/slashome
 // @updateURL    https://raw.githubusercontent.com/slashome/userscripts/main/scripts/github-pr-file-tree-follow.user.js
@@ -65,8 +65,11 @@
                 border-radius: 6px;
             }
             [${ANCESTOR_ATTRIBUTE}] > div:first-child {
-                background-color: rgba(110, 118, 129, 0.06) !important;
+                /* Opaque so the files scrolling under a sticky folder stay hidden */
+                background: linear-gradient(rgba(110, 118, 129, 0.06), rgba(110, 118, 129, 0.06)), var(--bgColor-default, #0d1117) !important;
                 border-radius: 6px;
+                position: sticky !important;
+                z-index: 2;
             }
             [${ANCESTOR_ATTRIBUTE}] > div:first-child [class*="visual"] svg {
                 color: var(--fgColor-success, #3fb950) !important;
@@ -284,6 +287,9 @@
         document.querySelectorAll(`[${ACTIVE_ATTRIBUTE}], [${ANCESTOR_ATTRIBUTE}]`).forEach(element => {
             element.removeAttribute(ACTIVE_ATTRIBUTE);
             element.removeAttribute(ANCESTOR_ATTRIBUTE);
+            if (element.firstElementChild) {
+                element.firstElementChild.style.removeProperty('top');
+            }
         });
     }
 
@@ -336,7 +342,16 @@
 
     function highlight(file, folders, shouldCenter) {
         clearHighlight();
-        folders.forEach(folder => folder.setAttribute(ANCESTOR_ATTRIBUTE, ''));
+        // Folders come outermost first: each one sticks one row below its parent while its content scrolls.
+        let stickyTop = 0;
+        folders.forEach(folder => {
+            folder.setAttribute(ANCESTOR_ATTRIBUTE, '');
+            const row = folder.firstElementChild;
+            if (row && isVisible(folder)) {
+                row.style.top = `${stickyTop}px`;
+                stickyTop += row.offsetHeight;
+            }
+        });
         if (file) {
             file.setAttribute(ACTIVE_ATTRIBUTE, '');
         }
