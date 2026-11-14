@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GitHub PR file tree follow
 // @description  Scrolls the file tree of a GitHub pull request along with the diff and highlights the file being read, with an on/off toggle next to the filter button
-// @version      1.0
+// @version      1.1
 // @namespace    https://github.com
 // @author       https://github.com/slashome
 // @updateURL    https://raw.githubusercontent.com/slashome/userscripts/main/scripts/github-pr-file-tree-follow.user.js
@@ -203,8 +203,9 @@
         if (hoveredDiffId) {
             return hoveredDiffId;
         }
-        const tree = findTree();
-        if (hovered && tree && tree.contains(hovered)) {
+        // Between two files (or over the tree, the header…) the pointer is on no diff:
+        // keep the current file instead of jumping to the reading line and back.
+        if (hovered && activeDiffId) {
             return activeDiffId;
         }
         return findDiffIdAtReadingLine();
