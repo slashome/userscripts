@@ -39,7 +39,7 @@ Every script declares an `@updateURL` pointing to this repository, so your exten
 | Script | Description | |
 | --- | --- | --- |
 | **Code background dark orange** | Gives `<code>` and `<tt>` tags in `.markdown-body` a dark orange background so inline code stands out. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/github-code-highlight.user.js) |
-| **PR file tree follow** | On the "Files changed" page of a pull request, highlights in the file tree the file under the mouse (or being read), lightly highlights its parent folders (green folder icon, faint background) so the file stays findable inside a collapsed folder, keeps those folders sticky at the top of the tree when they scroll out of view, and scrolls the tree to keep it centred. A square toggle next to the filter button turns the follow mode on or off (remembered in `localStorage`). | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/github-pr-file-tree-follow.user.js) |
+| **PR file tree follow** | On the "Files changed" page of a pull request, highlights in the file tree the file under the mouse (or being read), lightly highlights its parent folders (green folder icon, faint background) so the file stays findable inside a collapsed folder, keeps those folders sticky at the top of the tree when they scroll out of view, and scrolls the tree to keep it centred. See [screenshot](#github-pr-file-tree-follow). A square toggle next to the filter button turns the follow mode on or off (remembered in `localStorage`). | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/github-pr-file-tree-follow.user.js) |
 | **"View all" button** | Adds a "View all" button to a pull request review page that ticks every "Viewed" checkbox at once. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/github-view-all-button.user.js) |
 
 ### ChooseMyCompany
@@ -55,7 +55,7 @@ Every script declares an `@updateURL` pointing to this repository, so your exten
 | --- | --- | --- |
 | **Planning toggle** | Adds a button on the absence planning to hide or show the people who are not in the office today (remote work or leave). | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/lucca-planning-toggle.user.js) |
 | **Trombinoscope hide** | Adds a button on each directory photo to hide that person, and a button next to "Organigramme" to show everyone again. Hidden people are remembered by name in `localStorage`. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/lucca-trombi-hide.user.js) |
-| **Trombinoscope quiz** | Adds a "Quiz" button next to "Organigramme": guess the first and last name of each colleague from their photo, against the clock. See [details](#lucca-trombinoscope-quiz). | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/lucca-trombi-quiz.user.js) |
+| **Trombinoscope quiz** | Adds a "Quiz" button next to "Organigramme": guess the first and last name of each colleague from their photo, against the clock. See [details](#lucca-trombinoscope-quiz) and [screenshot](#lucca-trombinoscope-quiz-1). | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/lucca-trombi-quiz.user.js) |
 
 #### Lucca trombinoscope quiz
 
@@ -77,6 +77,14 @@ Every script declares an `@updateURL` pointing to this repository, so your exten
 | **YouTube redirect to Invidious** | Redirects any YouTube watch URL to the same video on Invidious. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/youtube-redirect.user.js) |
 
 ## Screenshots
+
+### GitHub PR file tree follow
+
+![GitHub PR file tree follow example](https://raw.githubusercontent.com/slashome/userscripts/main/screenshots/github-pr-file-tree-follow.png "GitHub PR file tree follow example")
+
+### Lucca trombinoscope quiz
+
+![Lucca trombinoscope quiz example](https://raw.githubusercontent.com/slashome/userscripts/main/screenshots/lucca-trombi-quiz.png "Lucca trombinoscope quiz example")
 
 ### Trello cost counter for Costello
 
