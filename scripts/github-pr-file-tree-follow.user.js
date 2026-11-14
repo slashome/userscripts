@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GitHub PR file tree follow
 // @description  Scrolls the file tree of a GitHub pull request along with the diff and highlights the file being read, with an on/off toggle next to the filter button
-// @version      1.2
+// @version      1.3
 // @namespace    https://github.com
 // @author       https://github.com/slashome
 // @updateURL    https://raw.githubusercontent.com/slashome/userscripts/main/scripts/github-pr-file-tree-follow.user.js
@@ -16,10 +16,14 @@
     const STORAGE_KEY = 'gh-pr-file-tree-follow';
     const TOGGLE_ID = 'gh-pr-file-tree-follow-toggle';
     const ACTIVE_ATTRIBUTE = 'data-gh-follow-active';
+    const ANCESTOR_ATTRIBUTE = 'data-gh-follow-ancestor';
     const DIFF_ID_PATTERN = /^diff-[0-9a-f]{64}$/;
     const PR_FILES_PATH_PATTERN = /^\/[^/]+\/[^/]+\/pull\/\d+\/(files|changes)/;
 
     const hashCache = new Map();
+    // diff hash → file path, learnt while the file is visible so it survives its folder being collapsed
+    const pathByHash = new Map();
+    let treeChanged = true;
     let enabled = readEnabled();
     let activeDiffId = null;
     let lastPointer = null;
@@ -59,6 +63,14 @@
                 background-color: var(--bgColor-neutral-muted, rgba(110, 118, 129, 0.12)) !important;
                 box-shadow: inset 2px 0 0 var(--button-primary-bgColor-rest, #238636);
                 border-radius: 6px;
+            }
+            [${ANCESTOR_ATTRIBUTE}] > div:first-child {
+                background-color: rgba(110, 118, 129, 0.06) !important;
+                border-radius: 6px;
+            }
+            [${ANCESTOR_ATTRIBUTE}] > div:first-child [class*="visual"] svg {
+                color: var(--fgColor-success, #3fb950) !important;
+                fill: var(--fgColor-success, #3fb950) !important;
             }
             #${TOGGLE_ID} {
                 display: inline-flex;
@@ -269,7 +281,30 @@
     }
 
     function clearHighlight() {
-        document.querySelectorAll(`[${ACTIVE_ATTRIBUTE}]`).forEach(element => element.removeAttribute(ACTIVE_ATTRIBUTE));
+        document.querySelectorAll(`[${ACTIVE_ATTRIBUTE}], [${ANCESTOR_ATTRIBUTE}]`).forEach(element => {
+            element.removeAttribute(ACTIVE_ATTRIBUTE);
+            element.removeAttribute(ANCESTOR_ATTRIBUTE);
+        });
+    }
+
+    function isVisible(treeItem) {
+        const row = treeItem.firstElementChild || treeItem;
+        return row.getClientRects().length > 0;
+    }
+
+    async function indexTree(tree) {
+        const files = [...tree.querySelectorAll('[role="treeitem"]')].filter(item => !item.hasAttribute('aria-expanded'));
+        for (const file of files) {
+            const path = pathOf(file);
+            if (path) {
+                pathByHash.set(await sha256(path), path);
+            }
+        }
+    }
+
+    function findAncestorFolders(tree, filePath) {
+        return [...tree.querySelectorAll('[role="treeitem"][aria-expanded]')]
+            .filter(folder => filePath.startsWith(`${pathOf(folder)}/`));
     }
 
     function findScrollContainer(element) {
@@ -299,11 +334,19 @@
         container.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
     }
 
-    function highlight(treeItem, shouldCenter) {
+    function highlight(file, folders, shouldCenter) {
         clearHighlight();
-        treeItem.setAttribute(ACTIVE_ATTRIBUTE, '');
-        if (shouldCenter) {
-            centerInTree(treeItem);
+        folders.forEach(folder => folder.setAttribute(ANCESTOR_ATTRIBUTE, ''));
+        if (file) {
+            file.setAttribute(ACTIVE_ATTRIBUTE, '');
+        }
+        if (!shouldCenter) {
+            return;
+        }
+        // Inside a collapsed folder the file is hidden: centre its deepest visible folder instead.
+        const target = file && isVisible(file) ? file : folders.filter(isVisible).pop();
+        if (target) {
+            centerInTree(target);
         }
     }
 
@@ -316,17 +359,28 @@
         if (!tree || !diffId) {
             return;
         }
-        const alreadyHighlighted = tree.querySelector(`[${ACTIVE_ATTRIBUTE}]`);
-        if (diffId === activeDiffId && alreadyHighlighted) {
+        const alreadyHighlighted = tree.querySelector(`[${ACTIVE_ATTRIBUTE}], [${ANCESTOR_ATTRIBUTE}]`);
+        if (diffId === activeDiffId && alreadyHighlighted && !treeChanged) {
             return;
         }
         activeDiffId = diffId;
+        treeChanged = false;
 
-        const treeItem = await findTreeItem(tree, diffId);
-        if (!treeItem || diffId !== activeDiffId || !enabled) {
+        await indexTree(tree);
+        const file = await findTreeItem(tree, diffId);
+        if (diffId !== activeDiffId || !enabled) {
             return;
         }
-        highlight(treeItem, !isPointerOverTree());
+        const hash = diffId.slice('diff-'.length);
+        if (file) {
+            pathByHash.set(hash, pathOf(file));
+        }
+        const filePath = pathByHash.get(hash);
+        const folders = filePath ? findAncestorFolders(tree, filePath) : [];
+        if (!file && folders.length === 0) {
+            return;
+        }
+        highlight(file, folders, !isPointerOverTree());
     }
 
     function findDiffIdOf(element) {
@@ -364,6 +418,7 @@
         }
         injectStyle();
         ensureToggle();
+        treeChanged = true;
         scheduleUpdate();
     }
 

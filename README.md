@@ -39,7 +39,7 @@ Every script declares an `@updateURL` pointing to this repository, so your exten
 | Script | Description | |
 | --- | --- | --- |
 | **Code background dark orange** | Gives `<code>` and `<tt>` tags in `.markdown-body` a dark orange background so inline code stands out. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/github-code-highlight.user.js) |
-| **PR file tree follow** | On the "Files changed" page of a pull request, highlights in the file tree the file under the mouse (or being read) and scrolls the tree to keep it centred. A square toggle next to the filter button turns the follow mode on or off (remembered in `localStorage`). | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/github-pr-file-tree-follow.user.js) |
+| **PR file tree follow** | On the "Files changed" page of a pull request, highlights in the file tree the file under the mouse (or being read), lightly highlights its parent folders (green folder icon, faint background) so the file stays findable inside a collapsed folder, and scrolls the tree to keep it centred. A square toggle next to the filter button turns the follow mode on or off (remembered in `localStorage`). | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/github-pr-file-tree-follow.user.js) |
 | **"View all" button** | Adds a "View all" button to a pull request review page that ticks every "Viewed" checkbox at once. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/github-view-all-button.user.js) |
 
 ### ChooseMyCompany
