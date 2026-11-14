@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GitHub PR file tree follow
 // @description  Scrolls the file tree of a GitHub pull request along with the diff and highlights the file being read, with an on/off toggle next to the filter button
-// @version      1.3
+// @version      1.4
 // @namespace    https://github.com
 // @author       https://github.com/slashome
 // @updateURL    https://raw.githubusercontent.com/slashome/userscripts/main/scripts/github-pr-file-tree-follow.user.js
@@ -378,6 +378,8 @@
         const filePath = pathByHash.get(hash);
         const folders = filePath ? findAncestorFolders(tree, filePath) : [];
         if (!file && folders.length === 0) {
+            // Unknown location (folder collapsed before the file was ever seen): never leave the previous file lit.
+            clearHighlight();
             return;
         }
         highlight(file, folders, !isPointerOverTree());
