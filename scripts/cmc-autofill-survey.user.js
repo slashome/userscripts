@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         CMC Auto-fill survey
 // @description  Fill automatically the Happy form with random answers
-// @version      1.0
+// @version      1.1
 // @namespace    https://choosemycompany.com
 // @author       https://github.com/slashome
-// @updateURL    https://raw.githubusercontent.com/slashome/userscripts/master/scripts/cmc-autofill-survey.js
-// @downloadURL  https://raw.githubusercontent.com/slashome/userscripts/master/scripts/cmc-autofill-survey.js
-// @match        surveys.choosemycompany.com/*
-// @match        surveys.preprod.choosemycompany.com/*
-// @match        surveys-vm.preprod.choosemycompany.com/*
+// @updateURL    https://raw.githubusercontent.com/slashome/userscripts/main/scripts/cmc-autofill-survey.user.js
+// @downloadURL  https://raw.githubusercontent.com/slashome/userscripts/main/scripts/cmc-autofill-survey.user.js
+// @match        https://surveys.choosemycompany.com/*
+// @match        https://surveys.preprod.choosemycompany.com/*
+// @match        https://surveys-vm.preprod.choosemycompany.com/*
 // @grant        none
 // ==/UserScript==
 

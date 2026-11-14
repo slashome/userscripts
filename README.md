@@ -1,34 +1,122 @@
-# My collection of Userscripts
+# Userscripts
 
-A grab bag of small userscripts I use day to day. To install any of them you need a
-userscript-compatible browser or extension.
+A collection of small userscripts I use day to day to fix or extend the websites I work with: GitHub, ChooseMyCompany, Lucca, Trello and a few others.
 
-I personally use the almighty [qutebrowser](https://qutebrowser.org). You can otherwise use:
+## Table of contents
 
-- [Greasemonkey](https://addons.mozilla.org/fr/firefox/addon/greasemonkey/) for [Firefox](https://firefox.com)
-- [Tampermonkey](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo) for [Chrome](https://www.google.fr/chrome)
-- [Userscripts](https://github.com/quoid/userscripts/tree/main) for [Safari](https://www.apple.com/safari)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Scripts](#scripts)
+  - [GitHub](#github)
+  - [ChooseMyCompany](#choosemycompany)
+  - [Lucca](#lucca)
+  - [Other websites](#other-websites)
+- [Screenshots](#screenshots)
+- [Development](#development)
+- [License](#license)
+
+## Requirements
+
+You need a browser or an extension that runs userscripts:
+
+| Browser | Extension |
+| --- | --- |
+| Chrome, Edge, Brave | [Tampermonkey](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo) |
+| Firefox | [Tampermonkey](https://addons.mozilla.org/firefox/addon/tampermonkey/) or [Greasemonkey](https://addons.mozilla.org/firefox/addon/greasemonkey/) |
+| Safari | [Userscripts](https://github.com/quoid/userscripts) |
+| [qutebrowser](https://qutebrowser.org) | Built in: drop the file in `~/.local/share/qutebrowser/greasemonkey/` |
+
+## Installation
+
+Click the **Install** link of a script below. Your extension opens the raw file and offers to install it.
+
+Every script declares an `@updateURL` pointing to this repository, so your extension picks up new versions on its own.
 
 ## Scripts
 
+### GitHub
+
 | Script | Description | |
 | --- | --- | --- |
-| **CMC Auto-fill login** | Auto-fills the ChooseMyCompany login form. On `cmc.local` a selector picks one of the local test accounts; on preprod and prod it fills back the email used at the last login. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/cmc-autofill-login.user.js) |
-| **CMC Auto-fill survey** | Fills a ChooseMyCompany Happy survey with random answers for quick testing. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/cmc-autofill-survey.user.js) |
-| **GitHub Code Background Dark Orange** | Restyles `<code>` and `<tt>` tags inside `.markdown-body` with a dark orange background so inline code is easier to spot on GitHub. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/github-code-highlight.user.js) |
-| **GitHub "View all" button** | Adds a "View all" button to a GitHub pull request review page that ticks every "Viewed" checkbox at once. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/github-view-all-button.user.js) |
-| **Instagram Popup Closer** | Automatically clicks the close (X) button of Instagram's signup/login upsell popup as soon as it appears, while leaving the real modals (posts, comments) untouched. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/instagram-popup-closer.user.js) |
-| **JobTeaser Company Sucker** | Paginates through JobTeaser's company listing, collects all unique company names, and exports them as a CSV. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/jobteaser-company-vacum.user.js) |
-| **Lucca planning toggle** | Adds a toggle button on the Lucca absence planning to hide/show collaborators who aren't in the office today (remote work or leave). | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/lucca-planning-toggle.user.js) |
-| **Lucca trombinoscope hide** | Adds a button on each Lucca directory photo to hide that person, and a button next to "Organigramme" to show everyone again. Hidden people are remembered by name in `localStorage`. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/lucca-trombi-hide.user.js) |
-| **Lucca trombinoscope quiz** | Adds a "Quiz" button next to "Organigramme" on the Lucca directory: photos show up one by one, each with a 15-second timer, and you guess each person's first name (a third of the points) and last name (all the points); the slower the answer, the fewer points (down to half at the buzzer). Each photo is scored out of 100 and the game score is their average, out of 100. Validating moves straight to the next photo and shows the previous answer below it. The final screen recaps every name and highlights the ones you missed, and lists your 10 best games (score, then time) kept in local storage, along with how you did against your best score and best time. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/lucca-trombi-quiz.user.js) |
-| **Parabol user filter** | Adds a user selector on Parabol boards to display only the cards belonging to one chosen user. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/parabol-user-filter.user.js) |
-| **RGPD Auto-Refuse** | Automatically refuses every toggle in RGPD/GDPR cookie consent modals and confirms the choice. Built around a small handlers system so support for new consent providers can be added by appending one entry. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/rgpd-auto-refuse.user.js) |
-| **Trello cost counter for Costello** | Adds the total cost of each Trello list next to the list title. See [screenshot](#trello-cost-counter-for-costello) below. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/trello-cost-counter.user.js) |
-| **Youtube redirect to Invidious** | Redirects any Youtube watch URL to the equivalent Invidious URL. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/youtube-redirect.user.js) |
+| **Code background dark orange** | Gives `<code>` and `<tt>` tags in `.markdown-body` a dark orange background so inline code stands out. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/github-code-highlight.user.js) |
+| **PR file tree follow** | On the "Files changed" page of a pull request, highlights in the file tree the file under the mouse (or being read) and scrolls the tree to keep it centred. A square toggle next to the filter button turns the follow mode on or off (remembered in `localStorage`). An eye button next to each "Viewed" button reveals that file in the tree on demand. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/github-pr-file-tree-follow.user.js) |
+| **"View all" button** | Adds a "View all" button to a pull request review page that ticks every "Viewed" checkbox at once. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/github-view-all-button.user.js) |
+
+### ChooseMyCompany
+
+| Script | Description | |
+| --- | --- | --- |
+| **Auto-fill login** | Fills the login form. On `cmc.local` a selector picks one of the local test accounts; on preprod and prod it fills back the email used at the last login. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/cmc-autofill-login.user.js) |
+| **Auto-fill survey** | Fills a Happy survey with random answers for quick testing. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/cmc-autofill-survey.user.js) |
+
+### Lucca
+
+| Script | Description | |
+| --- | --- | --- |
+| **Planning toggle** | Adds a button on the absence planning to hide or show the people who are not in the office today (remote work or leave). | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/lucca-planning-toggle.user.js) |
+| **Trombinoscope hide** | Adds a button on each directory photo to hide that person, and a button next to "Organigramme" to show everyone again. Hidden people are remembered by name in `localStorage`. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/lucca-trombi-hide.user.js) |
+| **Trombinoscope quiz** | Adds a "Quiz" button next to "Organigramme": guess the first and last name of each colleague from their photo, against the clock. See [details](#lucca-trombinoscope-quiz). | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/lucca-trombi-quiz.user.js) |
+
+#### Lucca trombinoscope quiz
+
+- Photos show up one by one, each with a 15-second timer.
+- The first name is worth a third of the points, the last name all of them. The slower the answer, the fewer points, down to half at the buzzer.
+- Each photo is scored out of 100 and the game score is their average.
+- Validating moves straight to the next photo and shows the previous answer below it.
+- The final screen recaps every name, highlights the ones you missed, and lists your 10 best games (score, then time) kept in `localStorage`, compared with your best score and best time.
+
+### Other websites
+
+| Script | Description | |
+| --- | --- | --- |
+| **Instagram popup closer** | Closes Instagram's signup/login upsell popup as soon as it appears, and leaves the real modals (posts, comments) alone. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/instagram-popup-closer.user.js) |
+| **JobTeaser company sucker** | Goes through every page of JobTeaser's company listing, collects the unique company names and exports them as a CSV. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/jobteaser-company-vacum.user.js) |
+| **Parabol user filter** | Adds a user selector on Parabol boards to show only the cards of one user. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/parabol-user-filter.user.js) |
+| **RGPD auto-refuse** | Refuses every toggle of RGPD/GDPR cookie consent modals and confirms the choice. Each consent provider is one entry of a handlers list, so adding a provider is one more entry. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/rgpd-auto-refuse.user.js) |
+| **Trello cost counter for Costello** | Shows the total cost of each Trello list next to its title. See [screenshot](#trello-cost-counter-for-costello). | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/trello-cost-counter.user.js) |
+| **YouTube redirect to Invidious** | Redirects any YouTube watch URL to the same video on Invidious. | [Install](https://raw.githubusercontent.com/slashome/userscripts/main/scripts/youtube-redirect.user.js) |
 
 ## Screenshots
 
 ### Trello cost counter for Costello
 
-![Trello cost counter exemple](https://raw.githubusercontent.com/slashome/userscripts/main/screenshots/trello-cost-counter.png "Trello cost counter exemple")
+![Trello cost counter example](https://raw.githubusercontent.com/slashome/userscripts/main/screenshots/trello-cost-counter.png "Trello cost counter example")
+
+## Development
+
+### Lint
+
+```sh
+npm install
+npm run lint       # check every script
+npm run lint:fix   # fix what can be fixed automatically
+```
+
+### Test a script locally with Tampermonkey
+
+Load the local file instead of reinstalling the script after each change:
+
+1. In `chrome://extensions`, open the Tampermonkey details and turn on **Allow access to file URLs**.
+2. Create a new script in Tampermonkey with only a header that requires your local file:
+
+   ```js
+   // ==UserScript==
+   // @name         [dev] My script
+   // @match        https://example.com/*
+   // @grant        none
+   // @require      file:///absolute/path/to/userscripts/scripts/my-script.user.js
+   // ==/UserScript==
+   ```
+
+3. Save, then reload the target page after each change to the file.
+
+### Add a script
+
+- Name the file `scripts/<site>-<feature>.user.js`.
+- Fill the header like the existing scripts: `@name`, `@description`, `@version`, `@namespace`, `@author`, `@match`, `@grant`, and `@updateURL` / `@downloadURL` pointing to the raw file on `main`.
+- Bump `@version` on every change, otherwise extensions do not pick up the update.
+- Add a line to the right table of this README.
+
+## License
+
+[MIT](https://opensource.org/licenses/MIT), as declared in `package.json`.
